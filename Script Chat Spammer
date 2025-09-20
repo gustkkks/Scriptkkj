@@ -1,4 +1,51 @@
--- Aimlock Script para Roblox
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Darkzin Hub",
+   Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+   LoadingTitle = "Darkzin Hub/ Carregando...",
+   LoadingSubtitle = "by Anri",
+   ShowText = "Rayfield", -- for mobile users to unhide rayfield, change if you'd like
+   Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+
+   ToggleUIKeybind = "K", -- The keybind to toggle the UI visibility (string like "K" or Enum.KeyCode)
+
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil, -- Create a custom folder for your hub/game
+      FileName = "Big Hub"
+   },
+
+   Discord = {
+      Enabled = false, -- Prompt the user to join your Discord server if their executor supports it
+      Invite = "noinvitelink", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ ABCD would be ABCD
+      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+   },
+
+   KeySystem = true, -- Set this to true to use our key system
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "https://pastebin.com/raw/UcxNPz0g", -- Use this to tell the user how to get a key
+      FileName = "Key System", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
+      SaveKey = false, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+      GrabKeyFromSite = true, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+      Key = {"DARKZINHUBTHEBEST"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
+   }
+})
+
+local Tab = Window:CreateTab("inÃ­cio", 4483362458) -- Title, Image
+local Section = Tab:CreateSection("inÃ­cio")
+
+local Toggle = Tab:CreateToggle({
+   Name = "AimBot,
+   CurrentValue = false,
+   Flag = "getgenv().Aimbot = false", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+   -- Aimlock Script para Roblox
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -225,83 +272,9 @@ Players.PlayerRemoving:Connect(function(leavingPlayer)
     end
 end)
 
-print("Aimlock GUI carregada! Clique no botão para ativar/desativar.")l = 2
-    textBox.Text = "Digite sua mensagem aqui..."
-    textBox.TextColor3 = Color3.new(1, 1, 1)
-    textBox.TextScaled = true
-    textBox.Font = Enum.Font.SourceSans
-    textBox.ClearTextOnFocus = true
-    textBox.Parent = mainFrame
-
-    -- Botão INICIAR SPAM
-    local spamButton = Instance.new("TextButton")
-    spamButton.Name = "SpamButton"
-    spamButton.Size = UDim2.new(0.42, 0, 0, 40)
-    spamButton.Position = UDim2.new(0.05, 0, 0, 160)
-    spamButton.BackgroundColor3 = Color3.new(0.2, 0.8, 0.2)
-    spamButton.BorderSizePixel = 0
-    spamButton.Text = "▶️ INICIAR SPAM"
-    spamButton.TextColor3 = Color3.new(1, 1, 1)
-    spamButton.TextScaled = true
-    spamButton.Font = Enum.Font.SourceSansBold
-    spamButton.Parent = mainFrame
-
-    -- Botão PARAR SPAM
-    local stopButton = Instance.new("TextButton")
-    stopButton.Name = "StopButton"
-    stopButton.Size = UDim2.new(0.42, 0, 0, 40)
-    stopButton.Position = UDim2.new(0.53, 0, 0, 160)
-    stopButton.BackgroundColor3 = Color3.new(0.8, 0.2, 0.2)
-    stopButton.BorderSizePixel = 0
-    stopButton.Text = "⏹️ PARAR SPAM"
-    stopButton.TextColor3 = Color3.new(1, 1, 1)
-    stopButton.TextScaled = true
-    stopButton.Font = Enum.Font.SourceSansBold
-    stopButton.Visible = false
-    stopButton.Parent = mainFrame
-
-    -- ===== FUNÇÕES DO CHAT SPAMMER (QUE FUNCIONAVA) =====
-    
-    -- Função para enviar mensagem no chat (FUNCIONAL)
-    local function sendMessage(message)
-        spawn(function()
-            -- Método 1: ReplicatedStorage (mais comum)
-            pcall(function()
-                game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(message, "All")
-            end)
-            
-            -- Método 2: Chat Service
-            pcall(function()
-                if player.Character and player.Character:FindFirstChild("Head") then
-                    game:GetService("Chat"):Chat(player.Character.Head, message)
-                end
-            end)
-            
-            -- Método 3: TextChatService (jogos novos)
-            pcall(function()
-                local textChatService = game:GetService("TextChatService")
-                local generalChannel = textChatService.TextChannels:FindFirstChild("RBXGeneral")
-                if generalChannel then
-                    generalChannel:SendAsync(message)
-                end
-            end)
-        end)
-    end
-
-    -- Função para iniciar spam
-    local function startSpam()
-        local message = textBox.Text
-        if message == "" or message == "Digite sua mensagem aqui..." then
-            -- Feedback visual de erro
-            textBox.BorderColor3 = Color3.new(1, 0.3, 0.3)
-            wait(1)
-            textBox.BorderColor3 = Color3.new(0.3, 0.7, 1)
-            return
-        end
-        
-        spamming = true
-        spamButton.Visible = false
-        stopButton.Visible = true
+print("Aimlock GUI carregada! Clique no botão para ativar/desativar.")
+   end,
+})Button.Visible = true
         textBox.TextEditable = false
         textBox.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
         
