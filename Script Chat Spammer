@@ -1,271 +1,231 @@
--- Chat Spammer by Anri
--- Script completo para executor Roblox
-
+-- Aimlock Script para Roblox
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local mouse = player:GetMouse()
+local camera = workspace.CurrentCamera
 
--- Variáveis de controle
-local spamming = false
-local spamConnection = nil
+-- Variáveis do Aimlock
+local aimlockEnabled = false
+local currentTarget = nil
+local connection = nil
 
-print("⏳ Preparando Chat Spammer...")
-wait(2) -- AGUARDA 2 SEGUNDOS ANTES DE COMEÇAR
+-- Configurações
+local maxDistance = 500 -- Distância máxima para detectar alvos
+local smoothness = 0.2 -- Suavidade do aimlock (0-1, menor = mais suave)
 
--- Criar GUI Principal
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ChatSpammerGUI"
-screenGui.Parent = playerGui
-screenGui.ResetOnSpawn = false
-
--- ===== TELA DE ABERTURA MILITAR (TELA CHEIA) =====
-local splashFrame = Instance.new("Frame")
-splashFrame.Name = "SplashFrame"
-splashFrame.Size = UDim2.new(1, 0, 1, 0)
-splashFrame.Position = UDim2.new(0, 0, 0, 0)
-splashFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-splashFrame.BorderSizePixel = 0
-splashFrame.Parent = screenGui
-
--- Título da splash (maior)
-local splashTitle = Instance.new("TextLabel")
-splashTitle.Name = "SplashTitle"
-splashTitle.Size = UDim2.new(0, 800, 0, 150)
-splashTitle.Position = UDim2.new(0.5, -400, 0.3, -75)
-splashTitle.BackgroundTransparency = 1
-splashTitle.Text = "CHAT SPAMMER"
-splashTitle.TextColor3 = Color3.new(0, 1, 0)
-splashTitle.TextScaled = true
-splashTitle.Font = Enum.Font.SourceSansBold
-splashTitle.TextTransparency = 1
-splashTitle.Parent = splashFrame
-
--- Créditos da splash (maior)
-local splashCredits = Instance.new("TextLabel")
-splashCredits.Name = "SplashCredits"
-splashCredits.Size = UDim2.new(0, 300, 0, 60)
-splashCredits.Position = UDim2.new(0.5, -150, 0.45, 0)
-splashCredits.BackgroundTransparency = 1
-splashCredits.Text = "BY ANRI"
-splashCredits.TextColor3 = Color3.new(0, 0.8, 0)
-splashCredits.TextScaled = true
-splashCredits.Font = Enum.Font.SourceSans
-splashCredits.TextTransparency = 1
-splashCredits.Parent = splashFrame
-
--- Frame da barra de loading (maior)
-local loadingFrame = Instance.new("Frame")
-loadingFrame.Name = "LoadingFrame"
-loadingFrame.Size = UDim2.new(0, 600, 0, 30)
-loadingFrame.Position = UDim2.new(0.5, -300, 0.6, 0)
-loadingFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
-loadingFrame.BorderColor3 = Color3.new(0, 1, 0)
-loadingFrame.BorderSizePixel = 3
-loadingFrame.Visible = false
-loadingFrame.Parent = splashFrame
-
--- Barra de progresso
-local progressBar = Instance.new("Frame")
-progressBar.Name = "ProgressBar"
-progressBar.Size = UDim2.new(0, 0, 1, 0)
-progressBar.Position = UDim2.new(0, 0, 0, 0)
-progressBar.BackgroundColor3 = Color3.new(0, 1, 0)
-progressBar.BorderSizePixel = 0
-progressBar.Parent = loadingFrame
-
--- Texto de loading (maior)
-local loadingText = Instance.new("TextLabel")
-loadingText.Name = "LoadingText"
-loadingText.Size = UDim2.new(0, 400, 0, 40)
-loadingText.Position = UDim2.new(0.5, -200, 0.68, 0)
-loadingText.BackgroundTransparency = 1
-loadingText.Text = "CARREGANDO SISTEMA..."
-loadingText.TextColor3 = Color3.new(0, 1, 0)
-loadingText.TextScaled = true
-loadingText.Font = Enum.Font.SourceSans
-loadingText.Visible = false
-loadingText.Parent = splashFrame
-
--- Porcentagem (maior)
-local percentText = Instance.new("TextLabel")
-percentText.Name = "PercentText"
-percentText.Size = UDim2.new(0, 150, 0, 30)
-percentText.Position = UDim2.new(0.5, -75, 0.73, 0)
-percentText.BackgroundTransparency = 1
-percentText.Text = "0%"
-percentText.TextColor3 = Color3.new(0, 0.8, 0)
-percentText.TextScaled = true
-percentText.Font = Enum.Font.SourceSansBold
-percentText.Visible = false
-percentText.Parent = splashFrame
-
--- ===== FUNÇÃO DA TELA DE ABERTURA (2 SEGUNDOS) =====
-local function showSplash()
-    print("=== CHAT SPAMMER INICIANDO ===")
+-- Função para encontrar o jogador mais próximo
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local shortestDistance = maxDistance
     
-    -- Fade in do título (0.5 segundos)
-    local titleTween = TweenService:Create(splashTitle, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {TextTransparency = 0})
-    titleTween:Play()
-    
-    wait(0.3)
-    
-    -- Fade in dos créditos (0.4 segundos)
-    local creditsTween = TweenService:Create(splashCredits, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {TextTransparency = 0})
-    creditsTween:Play()
-    
-    wait(0.5)
-    
-    -- Mostrar elementos de loading
-    loadingFrame.Visible = true
-    loadingText.Visible = true
-    percentText.Visible = true
-    
-    -- Simular carregamento rápido por 2 segundos (20 steps de 0.1 segundos)
-    spawn(function()
-        for i = 0, 100, 5 do -- Steps de 5 em 5
-            progressBar.Size = UDim2.new(i/100, 0, 1, 0)
-            percentText.Text = i .. "%"
-            wait(0.1) -- 20 steps em 2 segundos
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("Head") then
+            local character = otherPlayer.Character
+            local head = character.Head
+            
+            -- Verifica se o jogador está vivo
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                local distance = (head.Position - camera.CFrame.Position).Magnitude
+                
+                if distance < shortestDistance then
+                    closestPlayer = otherPlayer
+                    shortestDistance = distance
+                end
+            end
         end
-        progressBar.Size = UDim2.new(1, 0, 1, 0)
-        percentText.Text = "100%"
-    end)
+    end
     
-    -- Animar texto piscando durante o carregamento
-    spawn(function()
-        local messages = {"CARREGANDO SISTEMA...", "INICIALIZANDO...", "CONECTANDO...", "QUASE PRONTO..."}
-        for i = 1, 8 do -- 2 segundos de animação
-            loadingText.Text = messages[math.random(1, #messages)]
-            loadingText.TextTransparency = 0
-            wait(0.125)
-            loadingText.TextTransparency = 0.3
-            wait(0.125)
-        end
-    end)
-    
-    wait(2) -- Esperar os 2 segundos completos
-    
-    -- Texto final
-    loadingText.Text = "SISTEMA CARREGADO!"
-    percentText.Text = "100%"
-    wait(0.5)
-    
-    -- Fade out rápido
-    local fadeOutTween = TweenService:Create(splashFrame, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {BackgroundTransparency = 1})
-    local titleFadeOut = TweenService:Create(splashTitle, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {TextTransparency = 1})
-    local creditsFadeOut = TweenService:Create(splashCredits, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {TextTransparency = 1})
-    local loadingFadeOut = TweenService:Create(loadingText, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {TextTransparency = 1})
-    local percentFadeOut = TweenService:Create(percentText, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {TextTransparency = 1})
-    local frameFadeOut = TweenService:Create(loadingFrame, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {BackgroundTransparency = 1})
-    local progressFadeOut = TweenService:Create(progressBar, TweenInfo.new(0.8, Enum.EasingStyle.Quad), {BackgroundTransparency = 1})
-    
-    fadeOutTween:Play()
-    titleFadeOut:Play()
-    creditsFadeOut:Play()
-    loadingFadeOut:Play()
-    percentFadeOut:Play()
-    frameFadeOut:Play()
-    progressFadeOut:Play()
-    
-    wait(0.8)
-    
-    splashFrame:Destroy()
-    createMainGUI()
-    print("=== SISTEMA ATIVO ===")
+    return closestPlayer
 end
 
--- ===== PAINEL PRINCIPAL DO CHAT SPAMMER =====
-function createMainGUI()
-    -- Frame principal
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 350, 0, 220)
-    mainFrame.Position = UDim2.new(0.5, -175, 0.5, -110)
-    mainFrame.BackgroundColor3 = Color3.new(0.08, 0.08, 0.08)
-    mainFrame.BorderSizePixel = 2
-    mainFrame.BorderColor3 = Color3.new(0, 0.7, 1)
-    mainFrame.BackgroundTransparency = 1
-    mainFrame.Active = true -- PARA ARRASTAR
-    mainFrame.Draggable = true -- HABILITA ARRASTAR SIMPLES
-    mainFrame.Parent = screenGui
+-- Função para verificar se o alvo atual ainda é válido
+local function isTargetValid(target)
+    if not target or not target.Character or not target.Character:FindFirstChild("Head") then
+        return false
+    end
+    
+    local humanoid = target.Character:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then
+        return false
+    end
+    
+    local distance = (target.Character.Head.Position - camera.CFrame.Position).Magnitude
+    return distance <= maxDistance
+end
 
-    -- Animação de entrada suave
-    local entranceTween = TweenService:Create(mainFrame, TweenInfo.new(0.8, Enum.EasingStyle.Back), {BackgroundTransparency = 0})
-    entranceTween:Play()
+-- Função principal do aimlock
+local function aimlock()
+    if not aimlockEnabled then
+        return
+    end
+    
+    -- Verifica se o alvo atual ainda é válido
+    if currentTarget and not isTargetValid(currentTarget) then
+        currentTarget = nil
+    end
+    
+    -- Se não há alvo, procura um novo
+    if not currentTarget then
+        currentTarget = getClosestPlayer()
+    end
+    
+    -- Se encontrou um alvo, mira nele
+    if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("Head") then
+        local head = currentTarget.Character.Head
+        local targetPosition = head.Position
+        
+        -- Calcula a direção para o alvo
+        local direction = (targetPosition - camera.CFrame.Position).Unit
+        local newCFrame = CFrame.lookAt(camera.CFrame.Position, targetPosition)
+        
+        -- Aplica suavidade ao movimento
+        camera.CFrame = camera.CFrame:Lerp(newCFrame, smoothness)
+    end
+end
 
-    -- Barra do título
-    local titleBar = Instance.new("Frame")
-    titleBar.Name = "TitleBar"
-    titleBar.Size = UDim2.new(1, 0, 0, 35)
-    titleBar.Position = UDim2.new(0, 0, 0, 0)
-    titleBar.BackgroundColor3 = Color3.new(0, 0.4, 0.8)
-    titleBar.BorderSizePixel = 0
-    titleBar.Parent = mainFrame
+-- Função para toggle do aimlock
+local function toggleAimlock()
+    aimlockEnabled = not aimlockEnabled
+    
+    if aimlockEnabled then
+        print("Aimlock Ativado")
+        currentTarget = nil
+        connection = RunService.RenderStepped:Connect(aimlock)
+    else
+        print("Aimlock Desativado")
+        currentTarget = nil
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+    end
+    
+    -- Atualiza a GUI
+    if toggleButton then
+        toggleButton.Text = aimlockEnabled and "Aim Lock: ON" or "Aim Lock: OFF"
+        toggleButton.BackgroundColor3 = aimlockEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    end
+end
 
-    -- Título
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "TitleLabel"
-    titleLabel.Size = UDim2.new(0.8, 0, 1, 0)
-    titleLabel.Position = UDim2.new(0, 5, 0, 0)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = "🚀 CHAT SPAMMER"
-    titleLabel.TextColor3 = Color3.new(1, 1, 1)
-    titleLabel.TextScaled = true
-    titleLabel.Font = Enum.Font.SourceSansBold
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Parent = titleBar
+-- Criação da GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AimlockGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
-    -- Botão fechar (X)
-    local closeButton = Instance.new("TextButton")
-    closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 30, 0, 30)
-    closeButton.Position = UDim2.new(1, -35, 0, 2.5)
-    closeButton.BackgroundColor3 = Color3.new(0.9, 0.2, 0.2)
-    closeButton.BorderSizePixel = 0
-    closeButton.Text = "✕"
-    closeButton.TextColor3 = Color3.new(1, 1, 1)
-    closeButton.TextScaled = true
-    closeButton.Font = Enum.Font.SourceSansBold
-    closeButton.Parent = titleBar
+-- Frame principal
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 200, 0, 100)
+mainFrame.Position = UDim2.new(0, 10, 0, 10)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+mainFrame.BorderSizePixel = 2
+mainFrame.BorderColor3 = Color3.fromRGB(0, 162, 255)
+mainFrame.Parent = screenGui
 
-    -- Créditos
-    local creditsLabel = Instance.new("TextLabel")
-    creditsLabel.Name = "CreditsLabel"
-    creditsLabel.Size = UDim2.new(1, 0, 0, 20)
-    creditsLabel.Position = UDim2.new(0, 0, 0, 40)
-    creditsLabel.BackgroundTransparency = 1
-    creditsLabel.Text = "💻 Desenvolvido por Anri"
-    creditsLabel.TextColor3 = Color3.new(0.6, 0.9, 1)
-    creditsLabel.TextScaled = true
-    creditsLabel.Font = Enum.Font.SourceSansItalic
-    creditsLabel.Parent = mainFrame
+-- Arredondar cantos
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
 
-    -- Label da caixa de texto
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Name = "TextLabel"
-    textLabel.Size = UDim2.new(0.9, 0, 0, 25)
-    textLabel.Position = UDim2.new(0.05, 0, 0, 75)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = "📝 MENSAGEM PARA SPAM:"
-    textLabel.TextColor3 = Color3.new(1, 1, 1)
-    textLabel.TextScaled = true
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    textLabel.Parent = mainFrame
+-- Título
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Aimlock"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Parent = mainFrame
 
-    -- Caixa de texto
-    local textBox = Instance.new("TextBox")
-    textBox.Name = "SpamTextBox"
-    textBox.Size = UDim2.new(0.9, 0, 0, 40)
-    textBox.Position = UDim2.new(0.05, 0, 0, 105)
-    textBox.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
-    textBox.BorderColor3 = Color3.new(0.3, 0.7, 1)
-    textBox.BorderSizePixel = 2
+-- Botão Toggle
+toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Size = UDim2.new(0.9, 0, 0, 40)
+toggleButton.Position = UDim2.new(0.05, 0, 0.5, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+toggleButton.Text = "Aim Lock: OFF"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.TextScaled = true
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.Parent = mainFrame
+
+-- Arredondar cantos do botão
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0, 6)
+buttonCorner.Parent = toggleButton
+
+-- Efeito de hover no botão
+local buttonHover = false
+toggleButton.MouseEnter:Connect(function()
+    buttonHover = true
+    local tween = TweenService:Create(
+        toggleButton,
+        TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0.95, 0, 0, 42)}
+    )
+    tween:Play()
+end)
+
+toggleButton.MouseLeave:Connect(function()
+    buttonHover = false
+    local tween = TweenService:Create(
+        toggleButton,
+        TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0.9, 0, 0, 40)}
+    )
+    tween:Play()
+end)
+
+-- Conectar evento de clique
+toggleButton.MouseButton1Click:Connect(toggleAimlock)
+
+-- Funcionalidade de arrastar a GUI
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+mainFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Cleanup quando o jogador sair
+Players.PlayerRemoving:Connect(function(leavingPlayer)
+    if currentTarget == leavingPlayer then
+        currentTarget = nil
+    end
+end)
+
+print("Aimlock GUI carregada! Clique no botão para ativar/desativar.")l = 2
     textBox.Text = "Digite sua mensagem aqui..."
     textBox.TextColor3 = Color3.new(1, 1, 1)
     textBox.TextScaled = true
