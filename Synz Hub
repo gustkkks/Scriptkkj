@@ -1,13 +1,16 @@
 -- Synz Hub - Muscle Legends | By Anri
 -- Discord: https://discord.gg/GBkxYzy4P
+-- Versão: 1.3 (100% Funcional)
 
 print("🔄 Carregando Synz Hub...")
 
--- Variáveis
+-- Serviços
 local plr = game.Players.LocalPlayer
 local rs = game:GetService("RunService")
 local vim = game:GetService("VirtualInputManager")
+local uis = game:GetService("UserInputService")
 
+-- Variáveis
 local coords = {
     ["1M"] = CFrame.new(4123, 984.9, -4139.4),
     ["5M"] = CFrame.new(-9015.1, 18.3, -6116.2),
@@ -29,7 +32,18 @@ local currentJump = 50
 local speedEnabled = false
 local jumpEnabled = false
 local screenOverlay = nil
+local speedConnection = nil
+local jumpConnection = nil
+local shiftLockEnabled = false
+local ShiftLockScreenGui = nil
+local ShiftLockButton = nil
+local ShiftlockCursor = nil
+local fpsCapEnabled = false
+local FpsCapGui = nil
+local FpsLabel = nil
+local fpsConnection = nil
 
+-- Função de Auto Click
 local function autoClick()
     pcall(function()
         vim:SendMouseButtonEvent(0,0,0,true,game,0)
@@ -38,6 +52,7 @@ local function autoClick()
     end)
 end
 
+-- Anti-AFK
 plr.Idled:Connect(function()
     pcall(function()
         game:GetService("VirtualUser"):CaptureController()
@@ -46,11 +61,18 @@ plr.Idled:Connect(function()
 end)
 
 -- Carregar Library
-local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"))()
+local success, redzlib = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"))()
+end)
+
+if not success then
+    warn("❌ Erro ao carregar Library!")
+    return
+end
 
 local Window = redzlib:MakeWindow({
     Title = "Synz Hub | Muscle Legends",
-    SubTitle = "By Anri",
+    SubTitle = "By Anri - V1.3",
     SaveFolder = "SynzHub_ML"
 })
 
@@ -75,9 +97,9 @@ Window:SelectTab(Tab1)
 -- TAB 1 - MAIN
 local Section = Tab1:AddSection({"Auto Farm System"})
 
-local Paragraph = Tab1:AddParagraph({"Como Usar", "1. Selecione a Pedra\n2. Escolha a Lista RB\n3. Ative o Auto Farm"})
+Tab1:AddParagraph({"Como Usar", "1. Selecione a Pedra\n2. Escolha a Lista RB\n3. Ative o Auto Farm"})
 
-local Dropdown = Tab1:AddDropdown({
+Tab1:AddDropdown({
     Name = "Selecionar Pedra",
     Description = "Escolha qual pedra farmar",
     Options = {"1M", "5M", "10M"},
@@ -86,21 +108,21 @@ local Dropdown = Tab1:AddDropdown({
     Callback = function(Value)
         selectedStone = Value
         selectedList = lists[Value][1]
-        print("Pedra: " .. Value)
+        print("✅ Pedra selecionada: " .. Value)
     end
 })
 
-local Dropdown2 = Tab1:AddDropdown({
+Tab1:AddDropdown({
     Name = "Lista de RB",
     Description = "Configuração de farm",
-    Options = {"1. 480 RB - 5s", "2. 1480 RB - 10s", "3. 2980 RB - 15s"},
+    Options = {"1. 480 RB - 5s", "2. 1480 RB - 10s", "3. 2980 RB - 15s", "4. 4980 RB - 20s", "5. 7480 RB - 25s", "6. 10480 RB - 30s"},
     Default = "1. 480 RB - 5s",
     Flag = "list_dropdown",
     Callback = function(Value)
         local idx = tonumber(Value:match("(%d+)%."))
         if idx and lists[selectedStone][idx] then
             selectedList = lists[selectedStone][idx]
-            print("Lista: " .. Value)
+            print("✅ Lista selecionada: " .. Value)
         end
     end
 })
@@ -115,7 +137,7 @@ Toggle1:Callback(function(Value)
     autoFarmEnabled = Value
     
     if Value then
-        print("Farm ON")
+        print("✅ Auto Farm ATIVADO")
         farmConnection = rs.Heartbeat:Connect(function()
             if not autoFarmEnabled then return end
             pcall(function()
@@ -128,7 +150,7 @@ Toggle1:Callback(function(Value)
             task.wait(selectedList[2])
         end)
     else
-        print("Farm OFF")
+        print("❌ Auto Farm DESATIVADO")
         if farmConnection then
             farmConnection:Disconnect()
             farmConnection = nil
@@ -139,7 +161,7 @@ end)
 -- TAB 2 - BETA
 local Section2 = Tab2:AddSection({"Beta Features"})
 
-local Paragraph2 = Tab2:AddParagraph({"Aviso", "Recursos em teste"})
+Tab2:AddParagraph({"Aviso", "Recursos em teste - Use com cuidado!"})
 
 Tab2:AddSlider({
     Name = "Velocidade",
@@ -149,12 +171,7 @@ Tab2:AddSlider({
     Default = 16,
     Callback = function(Value)
         currentSpeed = Value
-        if speedEnabled then
-            local char = plr.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.WalkSpeed = Value
-            end
-        end
+        print("⚡ Velocidade ajustada: " .. Value)
     end
 })
 
@@ -165,10 +182,29 @@ local Toggle2 = Tab2:AddToggle({
 
 Toggle2:Callback(function(Value)
     speedEnabled = Value
-    local char = plr.Character
-    if char and char:FindFirstChild("Humanoid") then
-        char.Humanoid.WalkSpeed = Value and currentSpeed or 16
-        print(Value and "Speed ON" or "Speed OFF")
+    
+    if Value then
+        print("✅ Velocidade ATIVADA: " .. currentSpeed)
+        speedConnection = rs.Heartbeat:Connect(function()
+            pcall(function()
+                local char = plr.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    char.Humanoid.WalkSpeed = currentSpeed
+                end
+            end)
+        end)
+    else
+        print("❌ Velocidade DESATIVADA")
+        if speedConnection then
+            speedConnection:Disconnect()
+            speedConnection = nil
+        end
+        pcall(function()
+            local char = plr.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.WalkSpeed = 16
+            end
+        end)
     end
 end)
 
@@ -180,12 +216,7 @@ Tab2:AddSlider({
     Default = 50,
     Callback = function(Value)
         currentJump = Value
-        if jumpEnabled then
-            local char = plr.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.JumpPower = Value
-            end
-        end
+        print("🦘 Pulo ajustado: " .. Value)
     end
 })
 
@@ -196,23 +227,136 @@ local Toggle3 = Tab2:AddToggle({
 
 Toggle3:Callback(function(Value)
     jumpEnabled = Value
-    local char = plr.Character
-    if char and char:FindFirstChild("Humanoid") then
-        char.Humanoid.JumpPower = Value and currentJump or 50
-        print(Value and "Jump ON" or "Jump OFF")
+    
+    if Value then
+        print("✅ Pulo ATIVADO: " .. currentJump)
+        jumpConnection = rs.Heartbeat:Connect(function()
+            pcall(function()
+                local char = plr.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    char.Humanoid.JumpPower = currentJump
+                end
+            end)
+        end)
+    else
+        print("❌ Pulo DESATIVADO")
+        if jumpConnection then
+            jumpConnection:Disconnect()
+            jumpConnection = nil
+        end
+        pcall(function()
+            local char = plr.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.JumpPower = 50
+            end
+        end)
     end
 end)
 
 local Toggle4 = Tab2:AddToggle({
-    Name = "Shift Lock",
+    Name = "Shift Lock (Mobile)",
     Default = false
 })
 
 Toggle4:Callback(function(Value)
-    pcall(function()
-        plr.DevEnableMouseLock = Value
-        print(Value and "Shift Lock ON" or "Shift Lock OFF")
-    end)
+    shiftLockEnabled = Value
+    
+    if Value then
+        pcall(function()
+            -- Criar GUI do Shiftlock
+            ShiftLockScreenGui = Instance.new("ScreenGui")
+            ShiftLockButton = Instance.new("ImageButton")
+            ShiftlockCursor = Instance.new("ImageLabel")
+            
+            local States = {
+                Off = "rbxasset://textures/ui/mouseLock_off@2x.png",
+                On = "rbxasset://textures/ui/mouseLock_on@2x.png",
+                Lock = "rbxasset://textures/MouseLockedCursor.png"
+            }
+            local MaxLength = 900000
+            local EnabledOffset = CFrame.new(1.7, 0, 0)
+            local DisabledOffset = CFrame.new(-1.7, 0, 0)
+            local Active = nil
+            
+            ShiftLockScreenGui.Name = "Synz Shiftlock"
+            ShiftLockScreenGui.Parent = game:GetService("CoreGui")
+            ShiftLockScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            ShiftLockScreenGui.ResetOnSpawn = false
+            
+            ShiftLockButton.Parent = ShiftLockScreenGui
+            ShiftLockButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            ShiftLockButton.BackgroundTransparency = 1.000
+            ShiftLockButton.Position = UDim2.new(0.7, 0, 0.75, 0)
+            ShiftLockButton.Size = UDim2.new(0.0636147112, 0, 0.0661305636, 0)
+            ShiftLockButton.SizeConstraint = Enum.SizeConstraint.RelativeXX
+            ShiftLockButton.Image = States.Off
+            
+            ShiftlockCursor.Name = "Shiftlock Cursor"
+            ShiftlockCursor.Parent = ShiftLockScreenGui
+            ShiftlockCursor.Image = States.Lock
+            ShiftlockCursor.Size = UDim2.new(0.03, 0, 0.03, 0)
+            ShiftlockCursor.Position = UDim2.new(0.5, 0, 0.5, 0)
+            ShiftlockCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+            ShiftlockCursor.SizeConstraint = Enum.SizeConstraint.RelativeXX
+            ShiftlockCursor.BackgroundTransparency = 1
+            ShiftlockCursor.Visible = false
+            
+            ShiftLockButton.MouseButton1Click:Connect(function()
+                if not Active then
+                    Active = rs.RenderStepped:Connect(function()
+                        pcall(function()
+                            plr.Character.Humanoid.AutoRotate = false
+                            ShiftLockButton.Image = States.On
+                            ShiftlockCursor.Visible = true
+                            plr.Character.HumanoidRootPart.CFrame = CFrame.new(
+                                plr.Character.HumanoidRootPart.Position,
+                                Vector3.new(
+                                    workspace.CurrentCamera.CFrame.LookVector.X * MaxLength,
+                                    plr.Character.HumanoidRootPart.Position.Y,
+                                    workspace.CurrentCamera.CFrame.LookVector.Z * MaxLength
+                                )
+                            )
+                            workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * EnabledOffset
+                            workspace.CurrentCamera.Focus = CFrame.fromMatrix(
+                                workspace.CurrentCamera.Focus.Position,
+                                workspace.CurrentCamera.CFrame.RightVector,
+                                workspace.CurrentCamera.CFrame.UpVector
+                            ) * EnabledOffset
+                        end)
+                    end)
+                else
+                    pcall(function()
+                        plr.Character.Humanoid.AutoRotate = true
+                        ShiftLockButton.Image = States.Off
+                        workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * DisabledOffset
+                        ShiftlockCursor.Visible = false
+                        if Active then
+                            Active:Disconnect()
+                            Active = nil
+                        end
+                    end)
+                end
+            end)
+            
+            print("✅ Shift Lock ATIVADO (Mobile)")
+            print("📱 Aperte o ícone na tela para usar!")
+        end)
+    else
+        pcall(function()
+            if ShiftLockScreenGui then
+                ShiftLockScreenGui:Destroy()
+                ShiftLockScreenGui = nil
+                ShiftLockButton = nil
+                ShiftlockCursor = nil
+            end
+            
+            if plr.Character and plr.Character:FindFirstChild("Humanoid") then
+                plr.Character.Humanoid.AutoRotate = true
+            end
+        end)
+        
+        print("❌ Shift Lock DESATIVADO")
+    end
 end)
 
 local Toggle5 = Tab2:AddToggle({
@@ -222,24 +366,35 @@ local Toggle5 = Tab2:AddToggle({
 
 Toggle5:Callback(function(Value)
     if Value then
-        if not screenOverlay then
-            screenOverlay = Instance.new("Frame")
-            screenOverlay.Size = UDim2.new(1,0,1,0)
-            screenOverlay.Position = UDim2.new(0,0,0,0)
-            screenOverlay.BorderSizePixel = 0
-            screenOverlay.ZIndex = -999
-            pcall(function()
-                screenOverlay.Parent = game:GetService("CoreGui")
-            end)
-        end
-        screenOverlay.BackgroundColor3 = Color3.new(0,0,0)
-        screenOverlay.Visible = true
-        print("Black Screen ON")
+        pcall(function()
+            if not screenOverlay then
+                screenOverlay = Instance.new("ScreenGui")
+                screenOverlay.Name = "SynzOverlay"
+                screenOverlay.ResetOnSpawn = false
+                screenOverlay.IgnoreGuiInset = true
+                
+                local frame = Instance.new("Frame")
+                frame.Size = UDim2.new(1,0,1,0)
+                frame.Position = UDim2.new(0,0,0,0)
+                frame.BorderSizePixel = 0
+                frame.BackgroundColor3 = Color3.new(0,0,0)
+                frame.ZIndex = 10
+                frame.Parent = screenOverlay
+                
+                screenOverlay.Parent = plr:WaitForChild("PlayerGui")
+            else
+                screenOverlay.Enabled = true
+                screenOverlay.Frame.BackgroundColor3 = Color3.new(0,0,0)
+            end
+        end)
+        print("✅ Black Screen ATIVADO")
     else
-        if screenOverlay then
-            screenOverlay.Visible = false
-            print("Black Screen OFF")
-        end
+        pcall(function()
+            if screenOverlay then
+                screenOverlay.Enabled = false
+            end
+        end)
+        print("❌ Black Screen DESATIVADO")
     end
 end)
 
@@ -250,56 +405,180 @@ local Toggle6 = Tab2:AddToggle({
 
 Toggle6:Callback(function(Value)
     if Value then
-        if not screenOverlay then
-            screenOverlay = Instance.new("Frame")
-            screenOverlay.Size = UDim2.new(1,0,1,0)
-            screenOverlay.Position = UDim2.new(0,0,0,0)
-            screenOverlay.BorderSizePixel = 0
-            screenOverlay.ZIndex = -999
-            pcall(function()
-                screenOverlay.Parent = game:GetService("CoreGui")
-            end)
-        end
-        screenOverlay.BackgroundColor3 = Color3.new(1,1,1)
-        screenOverlay.Visible = true
-        print("White Screen ON")
+        pcall(function()
+            if not screenOverlay then
+                screenOverlay = Instance.new("ScreenGui")
+                screenOverlay.Name = "SynzOverlay"
+                screenOverlay.ResetOnSpawn = false
+                screenOverlay.IgnoreGuiInset = true
+                
+                local frame = Instance.new("Frame")
+                frame.Size = UDim2.new(1,0,1,0)
+                frame.Position = UDim2.new(0,0,0,0)
+                frame.BorderSizePixel = 0
+                frame.BackgroundColor3 = Color3.new(1,1,1)
+                frame.ZIndex = 10
+                frame.Parent = screenOverlay
+                
+                screenOverlay.Parent = plr:WaitForChild("PlayerGui")
+            else
+                screenOverlay.Enabled = true
+                screenOverlay.Frame.BackgroundColor3 = Color3.new(1,1,1)
+            end
+        end)
+        print("✅ White Screen ATIVADO")
     else
-        if screenOverlay then
-            screenOverlay.Visible = false
-            print("White Screen OFF")
-        end
+        pcall(function()
+            if screenOverlay then
+                screenOverlay.Enabled = false
+            end
+        end)
+        print("❌ White Screen DESATIVADO")
+    end
+end)
+
+local Toggle7 = Tab2:AddToggle({
+    Name = "FPS Counter",
+    Default = false
+})
+
+Toggle7:Callback(function(Value)
+    fpsCapEnabled = Value
+    
+    if Value then
+        pcall(function()
+            -- Criar GUI do FPS Counter
+            FpsCapGui = Instance.new("ScreenGui")
+            FpsLabel = Instance.new("TextLabel")
+            
+            FpsCapGui.Name = "Synz FPS Counter"
+            FpsCapGui.Parent = game:GetService("CoreGui")
+            FpsCapGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            FpsCapGui.ResetOnSpawn = false
+            
+            FpsLabel.Parent = FpsCapGui
+            FpsLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            FpsLabel.BackgroundTransparency = 0.5
+            FpsLabel.BorderSizePixel = 0
+            FpsLabel.Position = UDim2.new(0.01, 0, 0.01, 0)
+            FpsLabel.Size = UDim2.new(0.08, 0, 0.05, 0)
+            FpsLabel.Font = Enum.Font.GothamBold
+            FpsLabel.Text = "FPS: 60"
+            FpsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            FpsLabel.TextScaled = true
+            FpsLabel.TextWrapped = true
+            FpsLabel.TextXAlignment = Enum.TextXAlignment.Center
+            FpsLabel.TextYAlignment = Enum.TextYAlignment.Center
+            
+            -- Sistema de contagem de FPS
+            local lastTime = tick()
+            local frameCount = 0
+            
+            fpsConnection = rs.RenderStepped:Connect(function()
+                frameCount = frameCount + 1
+                local currentTime = tick()
+                
+                if currentTime - lastTime >= 1 then
+                    local fps = math.floor(frameCount / (currentTime - lastTime))
+                    FpsLabel.Text = "FPS: " .. fps
+                    
+                    -- Mudar cor baseado no FPS
+                    if fps >= 55 then
+                        FpsLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                    elseif fps >= 30 then
+                        FpsLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+                    else
+                        FpsLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                    end
+                    
+                    frameCount = 0
+                    lastTime = currentTime
+                end
+            end)
+            
+            -- Tornar arrastável
+            local dragging = false
+            local dragInput, mousePos, framePos
+            
+            FpsLabel.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                    mousePos = input.Position
+                    framePos = FpsLabel.Position
+                    
+                    input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            dragging = false
+                        end
+                    end)
+                end
+            end)
+            
+            FpsLabel.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                    dragInput = input
+                end
+            end)
+            
+            uis.InputChanged:Connect(function(input)
+                if input == dragInput and dragging then
+                    local delta = input.Position - mousePos
+                    FpsLabel.Position = UDim2.new(
+                        framePos.X.Scale,
+                        framePos.X.Offset + delta.X,
+                        framePos.Y.Scale,
+                        framePos.Y.Offset + delta.Y
+                    )
+                end
+            end)
+            
+            print("✅ FPS Counter ATIVADO")
+            print("📱 Arraste o contador para posicionar!")
+        end)
+    else
+        pcall(function()
+            if fpsConnection then
+                fpsConnection:Disconnect()
+                fpsConnection = nil
+            end
+            
+            if FpsCapGui then
+                FpsCapGui:Destroy()
+                FpsCapGui = nil
+                FpsLabel = nil
+            end
+        end)
+        
+        print("❌ FPS Counter DESATIVADO")
     end
 end)
 
 -- TAB 3 - SETTINGS
 local Section3 = Tab3:AddSection({"Informações"})
 
-local Paragraph3 = Tab3:AddParagraph({"Synz Hub V1.1", "Criador: Anri\nJogo: Muscle Legends\nDiscord: discord.gg/GBkxYzy4P"})
+Tab3:AddParagraph({"Synz Hub V1.3", "Criador: Anri\nJogo: Muscle Legends\nDiscord: discord.gg/GBkxYzy4P\n\n✅ 100% Funcional:\n- Auto Farm\n- Speed/Jump\n- Shift Lock Mobile\n- Black/White Screen\n- FPS Counter"})
 
-Tab3:AddButton({"Destruir GUI", function(Value)
-    local Dialog = Window:Dialog({
-        Title = "Confirmar",
-        Text = "Deseja destruir a GUI?",
-        Options = {
-            {"Sim", function()
-                if farmConnection then farmConnection:Disconnect() end
-                if screenOverlay then screenOverlay:Destroy() end
-                redzlib:Destroy()
-                print("GUI Destruída")
-            end},
-            {"Não", function()
-                print("Cancelado")
-            end}
-        }
-    })
-end})
-
-plr.CharacterAdded:Connect(function(char)
-    task.wait(0.5)
-    local hum = char:WaitForChild("Humanoid")
-    if speedEnabled then hum.WalkSpeed = currentSpeed end
-    if jumpEnabled then hum.JumpPower = currentJump end
-end)
-
-print("✅ Synz Hub Carregado!")
-print("Discord: discord.gg/GBkxYzy4P")
+Tab3:AddButton({"Destruir GUI", function()
+    pcall(function()
+        local Dialog = Window:Dialog({
+            Title = "Confirmar",
+            Text = "Deseja destruir a GUI?",
+            Options = {
+                {"Sim", function()
+                    pcall(function()
+                        if farmConnection then farmConnection:Disconnect() end
+                        if speedConnection then speedConnection:Disconnect() end
+                        if jumpConnection then jumpConnection:Disconnect() end
+                        if fpsConnection then fpsConnection:Disconnect() end
+                        if screenOverlay then screenOverlay:Destroy() end
+                        if ShiftLockScreenGui then ShiftLockScreenGui:Destroy() end
+                        if FpsCapGui then FpsCapGui:Destroy() end
+                        
+                        local char = plr.Character
+                        if char and char:FindFirstChild("Humanoid") then
+                            char.Humanoid.WalkSpeed = 16
+                            char.Humanoid.JumpPower = 50
+                            char.Humanoid.AutoRotate = true
+                        end
+                        
+                        redzl
