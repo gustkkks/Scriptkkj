@@ -1,0 +1,305 @@
+-- Synz Hub - Muscle Legends | By Anri
+-- Discord: https://discord.gg/GBkxYzy4P
+
+print("🔄 Carregando Synz Hub...")
+
+-- Variáveis
+local plr = game.Players.LocalPlayer
+local rs = game:GetService("RunService")
+local vim = game:GetService("VirtualInputManager")
+
+local coords = {
+    ["1M"] = CFrame.new(4123, 984.9, -4139.4),
+    ["5M"] = CFrame.new(-9015.1, 18.3, -6116.2),
+    ["10M"] = CFrame.new(-7517, 4.3, 2898.3)
+}
+
+local lists = {
+    ["1M"] = {{480,5},{1480,10},{2980,15},{4980,20},{7480,25},{10480,30}},
+    ["5M"] = {{80,5},{220,8},{280,10},{580,15},{980,20},{1480,25}},
+    ["10M"] = {{52,5},{208,10},{440,15},{748,20},{1132,25},{1592,30}}
+}
+
+local autoFarmEnabled = false
+local selectedStone = "1M"
+local selectedList = lists["1M"][1]
+local farmConnection = nil
+local currentSpeed = 16
+local currentJump = 50
+local speedEnabled = false
+local jumpEnabled = false
+local screenOverlay = nil
+
+local function autoClick()
+    pcall(function()
+        vim:SendMouseButtonEvent(0,0,0,true,game,0)
+        task.wait(0.05)
+        vim:SendMouseButtonEvent(0,0,0,false,game,0)
+    end)
+end
+
+plr.Idled:Connect(function()
+    pcall(function()
+        game:GetService("VirtualUser"):CaptureController()
+        game:GetService("VirtualUser"):ClickButton2(Vector2.new())
+    end)
+end)
+
+-- Carregar Library
+local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tbao143/Library-ui/refs/heads/main/Redzhubui"))()
+
+local Window = redzlib:MakeWindow({
+    Title = "Synz Hub | Muscle Legends",
+    SubTitle = "By Anri",
+    SaveFolder = "SynzHub_ML"
+})
+
+Window:AddMinimizeButton({
+    Button = { Image = "rbxassetid://71014873973869", BackgroundTransparency = 0 },
+    Corner = { CornerRadius = UDim.new(35, 1) }
+})
+
+local Tab1 = Window:MakeTab({"Main", "cherry"})
+local Tab2 = Window:MakeTab({"Beta", "star"})
+local Tab3 = Window:MakeTab({"Settings", "settings"})
+
+Tab1:AddDiscordInvite({
+    Name = "Synz Hub",
+    Description = "Join server",
+    Logo = "rbxassetid://18751483361",
+    Invite = "https://discord.gg/GBkxYzy4P"
+})
+
+Window:SelectTab(Tab1)
+
+-- TAB 1 - MAIN
+local Section = Tab1:AddSection({"Auto Farm System"})
+
+local Paragraph = Tab1:AddParagraph({"Como Usar", "1. Selecione a Pedra\n2. Escolha a Lista RB\n3. Ative o Auto Farm"})
+
+local Dropdown = Tab1:AddDropdown({
+    Name = "Selecionar Pedra",
+    Description = "Escolha qual pedra farmar",
+    Options = {"1M", "5M", "10M"},
+    Default = "1M",
+    Flag = "stone_dropdown",
+    Callback = function(Value)
+        selectedStone = Value
+        selectedList = lists[Value][1]
+        print("Pedra: " .. Value)
+    end
+})
+
+local Dropdown2 = Tab1:AddDropdown({
+    Name = "Lista de RB",
+    Description = "Configuração de farm",
+    Options = {"1. 480 RB - 5s", "2. 1480 RB - 10s", "3. 2980 RB - 15s"},
+    Default = "1. 480 RB - 5s",
+    Flag = "list_dropdown",
+    Callback = function(Value)
+        local idx = tonumber(Value:match("(%d+)%."))
+        if idx and lists[selectedStone][idx] then
+            selectedList = lists[selectedStone][idx]
+            print("Lista: " .. Value)
+        end
+    end
+})
+
+local Toggle1 = Tab1:AddToggle({
+    Name = "Auto Farm",
+    Description = "Ativa o farm automático",
+    Default = false
+})
+
+Toggle1:Callback(function(Value)
+    autoFarmEnabled = Value
+    
+    if Value then
+        print("Farm ON")
+        farmConnection = rs.Heartbeat:Connect(function()
+            if not autoFarmEnabled then return end
+            pcall(function()
+                local char = plr.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = coords[selectedStone]
+                    autoClick()
+                end
+            end)
+            task.wait(selectedList[2])
+        end)
+    else
+        print("Farm OFF")
+        if farmConnection then
+            farmConnection:Disconnect()
+            farmConnection = nil
+        end
+    end
+end)
+
+-- TAB 2 - BETA
+local Section2 = Tab2:AddSection({"Beta Features"})
+
+local Paragraph2 = Tab2:AddParagraph({"Aviso", "Recursos em teste"})
+
+Tab2:AddSlider({
+    Name = "Velocidade",
+    Min = 16,
+    Max = 200,
+    Increase = 1,
+    Default = 16,
+    Callback = function(Value)
+        currentSpeed = Value
+        if speedEnabled then
+            local char = plr.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.WalkSpeed = Value
+            end
+        end
+    end
+})
+
+local Toggle2 = Tab2:AddToggle({
+    Name = "Ativar Velocidade",
+    Default = false
+})
+
+Toggle2:Callback(function(Value)
+    speedEnabled = Value
+    local char = plr.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = Value and currentSpeed or 16
+        print(Value and "Speed ON" or "Speed OFF")
+    end
+end)
+
+Tab2:AddSlider({
+    Name = "Poder de Pulo",
+    Min = 50,
+    Max = 300,
+    Increase = 1,
+    Default = 50,
+    Callback = function(Value)
+        currentJump = Value
+        if jumpEnabled then
+            local char = plr.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.JumpPower = Value
+            end
+        end
+    end
+})
+
+local Toggle3 = Tab2:AddToggle({
+    Name = "Ativar Pulo",
+    Default = false
+})
+
+Toggle3:Callback(function(Value)
+    jumpEnabled = Value
+    local char = plr.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.JumpPower = Value and currentJump or 50
+        print(Value and "Jump ON" or "Jump OFF")
+    end
+end)
+
+local Toggle4 = Tab2:AddToggle({
+    Name = "Shift Lock",
+    Default = false
+})
+
+Toggle4:Callback(function(Value)
+    pcall(function()
+        plr.DevEnableMouseLock = Value
+        print(Value and "Shift Lock ON" or "Shift Lock OFF")
+    end)
+end)
+
+local Toggle5 = Tab2:AddToggle({
+    Name = "Black Screen",
+    Default = false
+})
+
+Toggle5:Callback(function(Value)
+    if Value then
+        if not screenOverlay then
+            screenOverlay = Instance.new("Frame")
+            screenOverlay.Size = UDim2.new(1,0,1,0)
+            screenOverlay.Position = UDim2.new(0,0,0,0)
+            screenOverlay.BorderSizePixel = 0
+            screenOverlay.ZIndex = -999
+            pcall(function()
+                screenOverlay.Parent = game:GetService("CoreGui")
+            end)
+        end
+        screenOverlay.BackgroundColor3 = Color3.new(0,0,0)
+        screenOverlay.Visible = true
+        print("Black Screen ON")
+    else
+        if screenOverlay then
+            screenOverlay.Visible = false
+            print("Black Screen OFF")
+        end
+    end
+end)
+
+local Toggle6 = Tab2:AddToggle({
+    Name = "White Screen",
+    Default = false
+})
+
+Toggle6:Callback(function(Value)
+    if Value then
+        if not screenOverlay then
+            screenOverlay = Instance.new("Frame")
+            screenOverlay.Size = UDim2.new(1,0,1,0)
+            screenOverlay.Position = UDim2.new(0,0,0,0)
+            screenOverlay.BorderSizePixel = 0
+            screenOverlay.ZIndex = -999
+            pcall(function()
+                screenOverlay.Parent = game:GetService("CoreGui")
+            end)
+        end
+        screenOverlay.BackgroundColor3 = Color3.new(1,1,1)
+        screenOverlay.Visible = true
+        print("White Screen ON")
+    else
+        if screenOverlay then
+            screenOverlay.Visible = false
+            print("White Screen OFF")
+        end
+    end
+end)
+
+-- TAB 3 - SETTINGS
+local Section3 = Tab3:AddSection({"Informações"})
+
+local Paragraph3 = Tab3:AddParagraph({"Synz Hub V1.1", "Criador: Anri\nJogo: Muscle Legends\nDiscord: discord.gg/GBkxYzy4P"})
+
+Tab3:AddButton({"Destruir GUI", function(Value)
+    local Dialog = Window:Dialog({
+        Title = "Confirmar",
+        Text = "Deseja destruir a GUI?",
+        Options = {
+            {"Sim", function()
+                if farmConnection then farmConnection:Disconnect() end
+                if screenOverlay then screenOverlay:Destroy() end
+                redzlib:Destroy()
+                print("GUI Destruída")
+            end},
+            {"Não", function()
+                print("Cancelado")
+            end}
+        }
+    })
+end})
+
+plr.CharacterAdded:Connect(function(char)
+    task.wait(0.5)
+    local hum = char:WaitForChild("Humanoid")
+    if speedEnabled then hum.WalkSpeed = currentSpeed end
+    if jumpEnabled then hum.JumpPower = currentJump end
+end)
+
+print("✅ Synz Hub Carregado!")
+print("Discord: discord.gg/GBkxYzy4P")
