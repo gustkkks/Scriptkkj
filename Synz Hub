@@ -350,56 +350,66 @@ end)
 local Toggle5 = Tab2:AddToggle({Name = "Black Screen", Default = false})
 Toggle5:Callback(function(Value)
     if Value then
-        pcall(function()
-            if not screenOverlay then
-                screenOverlay = Instance.new("ScreenGui")
-                screenOverlay.Name = "SynzOverlay"
-                screenOverlay.ResetOnSpawn = false
-                local frame = Instance.new("Frame")
-                frame.Size = UDim2.new(1,0,1,0)
-                frame.BackgroundColor3 = Color3.new(0,0,0)
-                frame.ZIndex = 10
-                frame.Parent = screenOverlay
+        if not screenOverlay then
+            screenOverlay = Instance.new("ScreenGui")
+            screenOverlay.Name = "SynzOverlay"
+            screenOverlay.ResetOnSpawn = false
+            screenOverlay.IgnoreGuiInset = true
+            
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(1,0,1,0)
+            frame.Position = UDim2.new(0,0,0,0)
+            frame.BorderSizePixel = 0
+            frame.BackgroundColor3 = Color3.new(0,0,0)
+            frame.ZIndex = 10
+            frame.Parent = screenOverlay
+            
+            pcall(function()
                 screenOverlay.Parent = plr:WaitForChild("PlayerGui")
-            else
-                screenOverlay.Enabled = true
-                screenOverlay.Frame.BackgroundColor3 = Color3.new(0,0,0)
-            end
-            print("✅ Black Screen ON")
-        end)
+            end)
+        else
+            screenOverlay.Enabled = true
+            screenOverlay.Frame.BackgroundColor3 = Color3.new(0,0,0)
+        end
+        print("✅ Black Screen ATIVADO")
     else
-        pcall(function()
-            if screenOverlay then screenOverlay.Enabled = false end
-            print("❌ Black Screen OFF")
-        end)
+        if screenOverlay then
+            screenOverlay.Enabled = false
+        end
+        print("❌ Black Screen DESATIVADO")
     end
 end)
 
 local Toggle6 = Tab2:AddToggle({Name = "White Screen", Default = false})
 Toggle6:Callback(function(Value)
     if Value then
-        pcall(function()
-            if not screenOverlay then
-                screenOverlay = Instance.new("ScreenGui")
-                screenOverlay.Name = "SynzOverlay"
-                screenOverlay.ResetOnSpawn = false
-                local frame = Instance.new("Frame")
-                frame.Size = UDim2.new(1,0,1,0)
-                frame.BackgroundColor3 = Color3.new(1,1,1)
-                frame.ZIndex = 10
-                frame.Parent = screenOverlay
+        if not screenOverlay then
+            screenOverlay = Instance.new("ScreenGui")
+            screenOverlay.Name = "SynzOverlay"
+            screenOverlay.ResetOnSpawn = false
+            screenOverlay.IgnoreGuiInset = true
+            
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(1,0,1,0)
+            frame.Position = UDim2.new(0,0,0,0)
+            frame.BorderSizePixel = 0
+            frame.BackgroundColor3 = Color3.new(1,1,1)
+            frame.ZIndex = 10
+            frame.Parent = screenOverlay
+            
+            pcall(function()
                 screenOverlay.Parent = plr:WaitForChild("PlayerGui")
-            else
-                screenOverlay.Enabled = true
-                screenOverlay.Frame.BackgroundColor3 = Color3.new(1,1,1)
-            end
-            print("✅ White Screen ON")
-        end)
+            end)
+        else
+            screenOverlay.Enabled = true
+            screenOverlay.Frame.BackgroundColor3 = Color3.new(1,1,1)
+        end
+        print("✅ White Screen ATIVADO")
     else
-        pcall(function()
-            if screenOverlay then screenOverlay.Enabled = false end
-            print("❌ White Screen OFF")
-        end)
+        if screenOverlay then
+            screenOverlay.Enabled = false
+        end
+        print("❌ White Screen DESATIVADO")
     end
 end)
 
