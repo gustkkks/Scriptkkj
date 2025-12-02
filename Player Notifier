@@ -1,0 +1,219 @@
+-- Script de Notificação de Jogadores com GUI
+-- Feito Por Anri
+
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local CoreGui = game:GetService("CoreGui")
+
+-- Função para enviar notificação
+local function enviarNotificacao(titulo, texto, duracao)
+    StarterGui:SetCore("SendNotification", {
+        Title = titulo;
+        Text = texto;
+        Duration = duracao or 5;
+    })
+end
+
+-- Tabela para rastrear jogadores já notificados
+local jogadoresNotificados = {}
+
+-- Adicionar jogadores já existentes na tabela
+for _, player in pairs(Players:GetPlayers()) do
+    jogadoresNotificados[player.UserId] = true
+end
+
+-- Função para obter o nome do time
+local function obterNomeTime(player)
+    if player.Team then
+        return player.Team.Name
+    else
+        return "Sem Time"
+    end
+end
+
+-- Criar GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NotificacaoGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = CoreGui
+
+-- Frame Principal
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 350, 0, 250)
+MainFrame.Position = UDim2.new(0.5, -175, 0.5, -125)
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Arredondar cantos
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Title.BorderSizePixel = 0
+Title.Text = "Sistema de Notificações - Anri"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = Title
+
+-- Label TextBox de Teste
+local TestLabel = Instance.new("TextLabel")
+TestLabel.Size = UDim2.new(1, -20, 0, 20)
+TestLabel.Position = UDim2.new(0, 10, 0, 50)
+TestLabel.BackgroundTransparency = 1
+TestLabel.Text = "Caixa de Teste:"
+TestLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TestLabel.TextSize = 14
+TestLabel.Font = Enum.Font.Gotham
+TestLabel.TextXAlignment = Enum.TextXAlignment.Left
+TestLabel.Parent = MainFrame
+
+-- TextBox de Teste
+local TestBox = Instance.new("TextBox")
+TestBox.Name = "TestBox"
+TestBox.Size = UDim2.new(1, -20, 0, 35)
+TestBox.Position = UDim2.new(0, 10, 0, 75)
+TestBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TestBox.BorderSizePixel = 0
+TestBox.PlaceholderText = "Digite algo aqui para testar..."
+TestBox.Text = ""
+TestBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TestBox.TextSize = 13
+TestBox.Font = Enum.Font.Gotham
+TestBox.ClearTextOnFocus = false
+TestBox.Parent = MainFrame
+
+local TestBoxCorner = Instance.new("UICorner")
+TestBoxCorner.CornerRadius = UDim.new(0, 6)
+TestBoxCorner.Parent = TestBox
+
+-- Botão Enviar Teste
+local TestButton = Instance.new("TextButton")
+TestButton.Name = "TestButton"
+TestButton.Size = UDim2.new(1, -20, 0, 35)
+TestButton.Position = UDim2.new(0, 10, 0, 120)
+TestButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+TestButton.BorderSizePixel = 0
+TestButton.Text = "Enviar Notificação de Teste"
+TestButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+TestButton.TextSize = 14
+TestButton.Font = Enum.Font.GothamBold
+TestButton.Parent = MainFrame
+
+local TestButtonCorner = Instance.new("UICorner")
+TestButtonCorner.CornerRadius = UDim.new(0, 6)
+TestButtonCorner.Parent = TestButton
+
+-- Label TextBox de Aviso
+local AvisoLabel = Instance.new("TextLabel")
+AvisoLabel.Size = UDim2.new(1, -20, 0, 20)
+AvisoLabel.Position = UDim2.new(0, 10, 0, 165)
+AvisoLabel.BackgroundTransparency = 1
+AvisoLabel.Text = "Enviar Aviso Personalizado:"
+AvisoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+AvisoLabel.TextSize = 14
+AvisoLabel.Font = Enum.Font.Gotham
+AvisoLabel.TextXAlignment = Enum.TextXAlignment.Left
+AvisoLabel.Parent = MainFrame
+
+-- Botão Enviar Aviso (Versão Simples)
+local AvisoButton = Instance.new("TextButton")
+AvisoButton.Name = "AvisoButton"
+AvisoButton.Size = UDim2.new(1, -20, 0, 35)
+AvisoButton.Position = UDim2.new(0, 10, 0, 190)
+AvisoButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+AvisoButton.BorderSizePixel = 0
+AvisoButton.Text = "Enviar Aviso do TextBox"
+AvisoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AvisoButton.TextSize = 14
+AvisoButton.Font = Enum.Font.GothamBold
+AvisoButton.Parent = MainFrame
+
+local AvisoButtonCorner = Instance.new("UICorner")
+AvisoButtonCorner.CornerRadius = UDim.new(0, 6)
+AvisoButtonCorner.Parent = AvisoButton
+
+-- Botão Fechar (X)
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.BorderSizePixel = 0
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextSize = 16
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.Parent = MainFrame
+
+local CloseButtonCorner = Instance.new("UICorner")
+CloseButtonCorner.CornerRadius = UDim.new(0, 6)
+CloseButtonCorner.Parent = CloseButton
+
+-- Função do Botão de Teste
+TestButton.MouseButton1Click:Connect(function()
+    local texto = TestBox.Text
+    if texto ~= "" then
+        enviarNotificacao("Teste", texto, 5)
+        TestBox.Text = ""
+    else
+        enviarNotificacao("Erro", "Digite algo na caixa de teste primeiro!", 3)
+    end
+end)
+
+-- Função do Botão de Aviso
+AvisoButton.MouseButton1Click:Connect(function()
+    local texto = TestBox.Text
+    if texto ~= "" then
+        enviarNotificacao("Aviso", texto, 5)
+        TestBox.Text = ""
+    else
+        enviarNotificacao("Erro", "Digite algo na caixa primeiro!", 3)
+    end
+end)
+
+-- Função do Botão Fechar
+CloseButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- Detectar quando um novo jogador entra
+Players.PlayerAdded:Connect(function(player)
+    if not jogadoresNotificados[player.UserId] then
+        jogadoresNotificados[player.UserId] = true
+        
+        wait(0.5)
+        
+        local nomeTime = obterNomeTime(player)
+        local mensagem = string.format("O Jogador %s do Time %s entrou no servidor.", player.Name, nomeTime)
+        
+        enviarNotificacao("Jogador Entrou", mensagem, 5)
+        print(mensagem)
+    end
+end)
+
+-- Detectar mudanças de time
+Players.PlayerAdded:Connect(function(player)
+    player:GetPropertyChangedSignal("Team"):Connect(function()
+        local nomeTime = obterNomeTime(player)
+        print(string.format("%s mudou para o time %s", player.Name, nomeTime))
+    end)
+end)
+
+-- Notificação inicial
+enviarNotificacao("Sistema Ativo", "Sistema de notificação ativo! GUI aberta. - Script Feito Por Anri", 4)
+print("Script de Notificação de Jogadores com GUI Iniciado - Feito Por Anri")
