@@ -1,219 +1,471 @@
--- Script de Notificação de Jogadores com GUI
--- Feito Por Anri
+-- MODIFICADOR DE ESTRUTURAS - FÍSICO + SALVAMENTO
+-- Execute este script em qualquer executor
 
 local Players = game:GetService("Players")
-local StarterGui = game:GetService("StarterGui")
-local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
 
--- Função para enviar notificação
-local function enviarNotificacao(titulo, texto, duracao)
-    StarterGui:SetCore("SendNotification", {
-        Title = titulo;
-        Text = texto;
-        Duration = duracao or 5;
-    })
-end
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
--- Tabela para rastrear jogadores já notificados
-local jogadoresNotificados = {}
+-- CONFIGURAÇÃO DO GITHUB (Altere com sua URL)
+local GITHUB_SAVE_URL = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPOSITORIO/main/estruturas_salvas.json"
+local GITHUB_API_URL = "https://api.github.com/repos/SEU_USUARIO/SEU_REPOSITORIO/contents/estruturas_salvas.json"
+local GITHUB_TOKEN = "SEU_TOKEN_AQUI" -- Token pessoal do GitHub
 
--- Adicionar jogadores já existentes na tabela
-for _, player in pairs(Players:GetPlayers()) do
-    jogadoresNotificados[player.UserId] = true
-end
-
--- Função para obter o nome do time
-local function obterNomeTime(player)
-    if player.Team then
-        return player.Team.Name
-    else
-        return "Sem Time"
-    end
-end
+-- Variáveis
+local modificadorAtivo = false
+local estruturasSalvas = {}
+local estruturasModificadas = {}
+local multiplicadorLargura = 1.0
+local multiplicadorTamanho = 1.0
 
 -- Criar GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NotificacaoGui"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = CoreGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ModificadorEstruturas"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
 
--- Frame Principal
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 350, 0, 250)
-MainFrame.Position = UDim2.new(0.5, -175, 0.5, -125)
-MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
+-- Frame principal
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 340, 0, 480)
+mainFrame.Position = UDim2.new(0.02, 0, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
 
--- Arredondar cantos
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = MainFrame
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 12)
+mainCorner.Parent = mainFrame
+
+-- Sombra
+local shadow = Instance.new("ImageLabel")
+shadow.Name = "Shadow"
+shadow.Size = UDim2.new(1, 30, 1, 30)
+shadow.Position = UDim2.new(0, -15, 0, -15)
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxasset://textures/ui/Shadow.png"
+shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+shadow.ImageTransparency = 0.5
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+shadow.ZIndex = 0
+shadow.Parent = mainFrame
+
+-- Barra superior
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1, 0, 0, 50)
+topBar.BackgroundColor3 = Color3.fromRGB(60, 140, 255)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainFrame
+
+local topCorner = Instance.new("UICorner")
+topCorner.CornerRadius = UDim.new(0, 12)
+topCorner.Parent = topBar
 
 -- Título
-local Title = Instance.new("TextLabel")
-Title.Name = "Title"
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Position = UDim2.new(0, 0, 0, 0)
-Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Title.BorderSizePixel = 0
-Title.Text = "Sistema de Notificações - Anri"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 16
-Title.Font = Enum.Font.GothamBold
-Title.Parent = MainFrame
+local titulo = Instance.new("TextLabel")
+titulo.Size = UDim2.new(1, 0, 1, 0)
+titulo.BackgroundTransparency = 1
+titulo.Text = "🔧 MODIFICADOR FÍSICO"
+titulo.TextColor3 = Color3.fromRGB(255, 255, 255)
+titulo.TextSize = 16
+titulo.Font = Enum.Font.GothamBold
+titulo.Parent = topBar
 
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 10)
-TitleCorner.Parent = Title
+-- Container
+local container = Instance.new("Frame")
+container.Size = UDim2.new(1, -20, 1, -70)
+container.Position = UDim2.new(0, 10, 0, 60)
+container.BackgroundTransparency = 1
+container.Parent = mainFrame
 
--- Label TextBox de Teste
-local TestLabel = Instance.new("TextLabel")
-TestLabel.Size = UDim2.new(1, -20, 0, 20)
-TestLabel.Position = UDim2.new(0, 10, 0, 50)
-TestLabel.BackgroundTransparency = 1
-TestLabel.Text = "Caixa de Teste:"
-TestLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TestLabel.TextSize = 14
-TestLabel.Font = Enum.Font.Gotham
-TestLabel.TextXAlignment = Enum.TextXAlignment.Left
-TestLabel.Parent = MainFrame
-
--- TextBox de Teste
-local TestBox = Instance.new("TextBox")
-TestBox.Name = "TestBox"
-TestBox.Size = UDim2.new(1, -20, 0, 35)
-TestBox.Position = UDim2.new(0, 10, 0, 75)
-TestBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-TestBox.BorderSizePixel = 0
-TestBox.PlaceholderText = "Digite algo aqui para testar..."
-TestBox.Text = ""
-TestBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-TestBox.TextSize = 13
-TestBox.Font = Enum.Font.Gotham
-TestBox.ClearTextOnFocus = false
-TestBox.Parent = MainFrame
-
-local TestBoxCorner = Instance.new("UICorner")
-TestBoxCorner.CornerRadius = UDim.new(0, 6)
-TestBoxCorner.Parent = TestBox
-
--- Botão Enviar Teste
-local TestButton = Instance.new("TextButton")
-TestButton.Name = "TestButton"
-TestButton.Size = UDim2.new(1, -20, 0, 35)
-TestButton.Position = UDim2.new(0, 10, 0, 120)
-TestButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-TestButton.BorderSizePixel = 0
-TestButton.Text = "Enviar Notificação de Teste"
-TestButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-TestButton.TextSize = 14
-TestButton.Font = Enum.Font.GothamBold
-TestButton.Parent = MainFrame
-
-local TestButtonCorner = Instance.new("UICorner")
-TestButtonCorner.CornerRadius = UDim.new(0, 6)
-TestButtonCorner.Parent = TestButton
-
--- Label TextBox de Aviso
-local AvisoLabel = Instance.new("TextLabel")
-AvisoLabel.Size = UDim2.new(1, -20, 0, 20)
-AvisoLabel.Position = UDim2.new(0, 10, 0, 165)
-AvisoLabel.BackgroundTransparency = 1
-AvisoLabel.Text = "Enviar Aviso Personalizado:"
-AvisoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-AvisoLabel.TextSize = 14
-AvisoLabel.Font = Enum.Font.Gotham
-AvisoLabel.TextXAlignment = Enum.TextXAlignment.Left
-AvisoLabel.Parent = MainFrame
-
--- Botão Enviar Aviso (Versão Simples)
-local AvisoButton = Instance.new("TextButton")
-AvisoButton.Name = "AvisoButton"
-AvisoButton.Size = UDim2.new(1, -20, 0, 35)
-AvisoButton.Position = UDim2.new(0, 10, 0, 190)
-AvisoButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
-AvisoButton.BorderSizePixel = 0
-AvisoButton.Text = "Enviar Aviso do TextBox"
-AvisoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-AvisoButton.TextSize = 14
-AvisoButton.Font = Enum.Font.GothamBold
-AvisoButton.Parent = MainFrame
-
-local AvisoButtonCorner = Instance.new("UICorner")
-AvisoButtonCorner.CornerRadius = UDim.new(0, 6)
-AvisoButtonCorner.Parent = AvisoButton
-
--- Botão Fechar (X)
-local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -35, 0, 5)
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseButton.BorderSizePixel = 0
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.TextSize = 16
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.Parent = MainFrame
-
-local CloseButtonCorner = Instance.new("UICorner")
-CloseButtonCorner.CornerRadius = UDim.new(0, 6)
-CloseButtonCorner.Parent = CloseButton
-
--- Função do Botão de Teste
-TestButton.MouseButton1Click:Connect(function()
-    local texto = TestBox.Text
-    if texto ~= "" then
-        enviarNotificacao("Teste", texto, 5)
-        TestBox.Text = ""
-    else
-        enviarNotificacao("Erro", "Digite algo na caixa de teste primeiro!", 3)
-    end
-end)
-
--- Função do Botão de Aviso
-AvisoButton.MouseButton1Click:Connect(function()
-    local texto = TestBox.Text
-    if texto ~= "" then
-        enviarNotificacao("Aviso", texto, 5)
-        TestBox.Text = ""
-    else
-        enviarNotificacao("Erro", "Digite algo na caixa primeiro!", 3)
-    end
-end)
-
--- Função do Botão Fechar
-CloseButton.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-end)
-
--- Detectar quando um novo jogador entra
-Players.PlayerAdded:Connect(function(player)
-    if not jogadoresNotificados[player.UserId] then
-        jogadoresNotificados[player.UserId] = true
-        
-        wait(0.5)
-        
-        local nomeTime = obterNomeTime(player)
-        local mensagem = string.format("O Jogador %s do Time %s entrou no servidor.", player.Name, nomeTime)
-        
-        enviarNotificacao("Jogador Entrou", mensagem, 5)
-        print(mensagem)
-    end
-end)
-
--- Detectar mudanças de time
-Players.PlayerAdded:Connect(function(player)
-    player:GetPropertyChangedSignal("Team"):Connect(function()
-        local nomeTime = obterNomeTime(player)
-        print(string.format("%s mudou para o time %s", player.Name, nomeTime))
+-- Função para criar botões
+local function criarBotao(texto, posicaoY, cor)
+    local botao = Instance.new("TextButton")
+    botao.Size = UDim2.new(1, 0, 0, 45)
+    botao.Position = UDim2.new(0, 0, 0, posicaoY)
+    botao.BackgroundColor3 = cor or Color3.fromRGB(40, 40, 45)
+    botao.Text = texto
+    botao.TextColor3 = Color3.fromRGB(255, 255, 255)
+    botao.TextSize = 14
+    botao.Font = Enum.Font.GothamSemibold
+    botao.BorderSizePixel = 0
+    botao.AutoButtonColor = false
+    botao.Parent = container
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = botao
+    
+    -- Efeito hover
+    botao.MouseEnter:Connect(function()
+        botao.BackgroundColor3 = Color3.fromRGB(
+            math.min(255, botao.BackgroundColor3.R * 255 + 20),
+            math.min(255, botao.BackgroundColor3.G * 255 + 20),
+            math.min(255, botao.BackgroundColor3.B * 255 + 20)
+        )
     end)
+    
+    botao.MouseLeave:Connect(function()
+        botao.BackgroundColor3 = cor or Color3.fromRGB(40, 40, 45)
+    end)
+    
+    return botao
+end
+
+-- Botão Ativar
+local btnAtivar = criarBotao("❌ Modificador: DESATIVADO", 0, Color3.fromRGB(180, 50, 50))
+
+-- Status
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 25)
+statusLabel.Position = UDim2.new(0, 0, 0, 52)
+statusLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+statusLabel.Text = "💡 Estruturas: 0 modificadas"
+statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusLabel.TextSize = 12
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.Parent = container
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(0, 6)
+statusCorner.Parent = statusLabel
+
+-- Separador
+local separador1 = Instance.new("Frame")
+separador1.Size = UDim2.new(1, 0, 0, 2)
+separador1.Position = UDim2.new(0, 0, 0, 85)
+separador1.BackgroundColor3 = Color3.fromRGB(60, 140, 255)
+separador1.BorderSizePixel = 0
+separador1.Parent = container
+
+-- Label Largura
+local labelLargura = Instance.new("TextLabel")
+labelLargura.Size = UDim2.new(1, 0, 0, 25)
+labelLargura.Position = UDim2.new(0, 0, 0, 95)
+labelLargura.BackgroundTransparency = 1
+labelLargura.Text = "📏 LARGURA (X, Z)"
+labelLargura.TextColor3 = Color3.fromRGB(255, 255, 255)
+labelLargura.TextSize = 13
+labelLargura.Font = Enum.Font.GothamBold
+labelLargura.TextXAlignment = Enum.TextXAlignment.Left
+labelLargura.Parent = container
+
+-- Frame Largura
+local frameLargura = Instance.new("Frame")
+frameLargura.Size = UDim2.new(1, 0, 0, 50)
+frameLargura.Position = UDim2.new(0, 0, 0, 125)
+frameLargura.BackgroundTransparency = 1
+frameLargura.Parent = container
+
+local btnMenosLargura = Instance.new("TextButton")
+btnMenosLargura.Size = UDim2.new(0.28, 0, 1, 0)
+btnMenosLargura.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+btnMenosLargura.Text = "−"
+btnMenosLargura.TextSize = 28
+btnMenosLargura.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnMenosLargura.Font = Enum.Font.GothamBold
+btnMenosLargura.BorderSizePixel = 0
+btnMenosLargura.Parent = frameLargura
+
+local corner1 = Instance.new("UICorner")
+corner1.CornerRadius = UDim.new(0, 8)
+corner1.Parent = btnMenosLargura
+
+local valorLargura = Instance.new("TextLabel")
+valorLargura.Size = UDim2.new(0.38, 0, 1, 0)
+valorLargura.Position = UDim2.new(0.31, 0, 0, 0)
+valorLargura.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+valorLargura.Text = "1.0x"
+valorLargura.TextSize = 18
+valorLargura.TextColor3 = Color3.fromRGB(100, 200, 255)
+valorLargura.Font = Enum.Font.GothamBold
+valorLargura.BorderSizePixel = 0
+valorLargura.Parent = frameLargura
+
+local corner2 = Instance.new("UICorner")
+corner2.CornerRadius = UDim.new(0, 8)
+corner2.Parent = valorLargura
+
+local btnMaisLargura = Instance.new("TextButton")
+btnMaisLargura.Size = UDim2.new(0.28, 0, 1, 0)
+btnMaisLargura.Position = UDim2.new(0.72, 0, 0, 0)
+btnMaisLargura.BackgroundColor3 = Color3.fromRGB(60, 220, 60)
+btnMaisLargura.Text = "+"
+btnMaisLargura.TextSize = 28
+btnMaisLargura.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnMaisLargura.Font = Enum.Font.GothamBold
+btnMaisLargura.BorderSizePixel = 0
+btnMaisLargura.Parent = frameLargura
+
+local corner3 = Instance.new("UICorner")
+corner3.CornerRadius = UDim.new(0, 8)
+corner3.Parent = btnMaisLargura
+
+-- Label Tamanho
+local labelTamanho = Instance.new("TextLabel")
+labelTamanho.Size = UDim2.new(1, 0, 0, 25)
+labelTamanho.Position = UDim2.new(0, 0, 0, 185)
+labelTamanho.BackgroundTransparency = 1
+labelTamanho.Text = "📐 ALTURA (Y)"
+labelTamanho.TextColor3 = Color3.fromRGB(255, 255, 255)
+labelTamanho.TextSize = 13
+labelTamanho.Font = Enum.Font.GothamBold
+labelTamanho.TextXAlignment = Enum.TextXAlignment.Left
+labelTamanho.Parent = container
+
+-- Frame Tamanho
+local frameTamanho = Instance.new("Frame")
+frameTamanho.Size = UDim2.new(1, 0, 0, 50)
+frameTamanho.Position = UDim2.new(0, 0, 0, 215)
+frameTamanho.BackgroundTransparency = 1
+frameTamanho.Parent = container
+
+local btnMenosTamanho = Instance.new("TextButton")
+btnMenosTamanho.Size = UDim2.new(0.28, 0, 1, 0)
+btnMenosTamanho.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+btnMenosTamanho.Text = "−"
+btnMenosTamanho.TextSize = 28
+btnMenosTamanho.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnMenosTamanho.Font = Enum.Font.GothamBold
+btnMenosTamanho.BorderSizePixel = 0
+btnMenosTamanho.Parent = frameTamanho
+
+local corner4 = Instance.new("UICorner")
+corner4.CornerRadius = UDim.new(0, 8)
+corner4.Parent = btnMenosTamanho
+
+local valorTamanho = Instance.new("TextLabel")
+valorTamanho.Size = UDim2.new(0.38, 0, 1, 0)
+valorTamanho.Position = UDim2.new(0.31, 0, 0, 0)
+valorTamanho.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+valorTamanho.Text = "1.0x"
+valorTamanho.TextSize = 18
+valorTamanho.TextColor3 = Color3.fromRGB(100, 200, 255)
+valorTamanho.Font = Enum.Font.GothamBold
+valorTamanho.BorderSizePixel = 0
+valorTamanho.Parent = frameTamanho
+
+local corner5 = Instance.new("UICorner")
+corner5.CornerRadius = UDim.new(0, 8)
+corner5.Parent = valorTamanho
+
+local btnMaisTamanho = Instance.new("TextButton")
+btnMaisTamanho.Size = UDim2.new(0.28, 0, 1, 0)
+btnMaisTamanho.Position = UDim2.new(0.72, 0, 0, 0)
+btnMaisTamanho.BackgroundColor3 = Color3.fromRGB(60, 220, 60)
+btnMaisTamanho.Text = "+"
+btnMaisTamanho.TextSize = 28
+btnMaisTamanho.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnMaisTamanho.Font = Enum.Font.GothamBold
+btnMaisTamanho.BorderSizePixel = 0
+btnMaisTamanho.Parent = frameTamanho
+
+local corner6 = Instance.new("UICorner")
+corner6.CornerRadius = UDim.new(0, 8)
+corner6.Parent = btnMaisTamanho
+
+-- Separador 2
+local separador2 = Instance.new("Frame")
+separador2.Size = UDim2.new(1, 0, 0, 2)
+separador2.Position = UDim2.new(0, 0, 0, 275)
+separador2.BackgroundColor3 = Color3.fromRGB(60, 140, 255)
+separador2.BorderSizePixel = 0
+separador2.Parent = container
+
+-- Botões Salvar/Carregar
+local btnSalvar = criarBotao("💾 SALVAR ESTRUTURAS", 285, Color3.fromRGB(80, 120, 200))
+local btnCarregar = criarBotao("📂 CARREGAR DO GITHUB", 340, Color3.fromRGB(120, 80, 200))
+local btnResetar = criarBotao("🔄 RESETAR TUDO", 395, Color3.fromRGB(200, 80, 80))
+
+-- FUNÇÕES DE MODIFICAÇÃO FÍSICA
+
+local function modificarParte(part)
+    if not part:IsA("BasePart") or part.Name == "Terrain" then return end
+    
+    -- Salvar dados originais
+    if not estruturasModificadas[part] then
+        estruturasModificadas[part] = {
+            OriginalSize = part.Size,
+            OriginalCFrame = part.CFrame,
+            Path = part:GetFullName()
+        }
+    end
+    
+    local original = estruturasModificadas[part].OriginalSize
+    
+    -- Aplicar modificação FÍSICA
+    part.Size = Vector3.new(
+        original.X * multiplicadorLargura,
+        original.Y * multiplicadorTamanho,
+        original.Z * multiplicadorLargura
+    )
+    
+    -- Manter posição central
+    part.CFrame = estruturasModificadas[part].OriginalCFrame
+end
+
+local function aplicarModificacoes()
+    local count = 0
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name ~= "Terrain" then
+            modificarParte(obj)
+            count = count + 1
+        end
+    end
+    statusLabel.Text = string.format("💡 Estruturas: %d modificadas", count)
+end
+
+local function resetarTudo()
+    for part, data in pairs(estruturasModificadas) do
+        if part and part.Parent then
+            part.Size = data.OriginalSize
+            part.CFrame = data.OriginalCFrame
+        end
+    end
+    estruturasModificadas = {}
+    statusLabel.Text = "💡 Estruturas: 0 modificadas"
+end
+
+-- SISTEMA DE SALVAMENTO
+
+local function salvarEstruturas()
+    local dados = {
+        largura = multiplicadorLargura,
+        tamanho = multiplicadorTamanho,
+        timestamp = os.time(),
+        estruturas = {}
+    }
+    
+    for part, info in pairs(estruturasModificadas) do
+        if part and part.Parent then
+            table.insert(dados.estruturas, {
+                path = info.Path,
+                originalSize = {info.OriginalSize.X, info.OriginalSize.Y, info.OriginalSize.Z}
+            })
+        end
+    end
+    
+    estruturasSalvas = dados
+    
+    -- Tentar salvar no GitHub (requer configuração)
+    local success, err = pcall(function()
+        local json = HttpService:JSONEncode(dados)
+        writefile("estruturas_salvas.json", json)
+    end)
+    
+    if success then
+        btnSalvar.Text = "✅ SALVO LOCALMENTE!"
+        btnSalvar.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        wait(2)
+        btnSalvar.Text = "💾 SALVAR ESTRUTURAS"
+        btnSalvar.BackgroundColor3 = Color3.fromRGB(80, 120, 200)
+    end
+    
+    return dados
+end
+
+local function carregarEstruturas()
+    local success, dados = pcall(function()
+        if isfile("estruturas_salvas.json") then
+            local json = readfile("estruturas_salvas.json")
+            return HttpService:JSONDecode(json)
+        end
+        return nil
+    end)
+    
+    if success and dados then
+        multiplicadorLargura = dados.largura
+        multiplicadorTamanho = dados.tamanho
+        
+        valorLargura.Text = string.format("%.1fx", multiplicadorLargura)
+        valorTamanho.Text = string.format("%.1fx", multiplicadorTamanho)
+        
+        if modificadorAtivo then
+            aplicarModificacoes()
+        end
+        
+        btnCarregar.Text = "✅ CARREGADO!"
+        btnCarregar.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        wait(2)
+        btnCarregar.Text = "📂 CARREGAR DO GITHUB"
+        btnCarregar.BackgroundColor3 = Color3.fromRGB(120, 80, 200)
+    else
+        btnCarregar.Text = "❌ Nenhum arquivo encontrado"
+        wait(2)
+        btnCarregar.Text = "📂 CARREGAR DO GITHUB"
+    end
+end
+
+-- EVENTOS DOS BOTÕES
+
+btnAtivar.MouseButton1Click:Connect(function()
+    modificadorAtivo = not modificadorAtivo
+    
+    if modificadorAtivo then
+        btnAtivar.Text = "✅ Modificador: ATIVADO"
+        btnAtivar.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+        aplicarModificacoes()
+    else
+        btnAtivar.Text = "❌ Modificador: DESATIVADO"
+        btnAtivar.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        resetarTudo()
+    end
 end)
 
--- Notificação inicial
-enviarNotificacao("Sistema Ativo", "Sistema de notificação ativo! GUI aberta. - Script Feito Por Anri", 4)
-print("Script de Notificação de Jogadores com GUI Iniciado - Feito Por Anri")
+btnMaisLargura.MouseButton1Click:Connect(function()
+    multiplicadorLargura = math.min(multiplicadorLargura + 0.1, 5.0)
+    valorLargura.Text = string.format("%.1fx", multiplicadorLargura)
+    if modificadorAtivo then aplicarModificacoes() end
+end)
+
+btnMenosLargura.MouseButton1Click:Connect(function()
+    multiplicadorLargura = math.max(multiplicadorLargura - 0.1, 0.1)
+    valorLargura.Text = string.format("%.1fx", multiplicadorLargura)
+    if modificadorAtivo then aplicarModificacoes() end
+end)
+
+btnMaisTamanho.MouseButton1Click:Connect(function()
+    multiplicadorTamanho = math.min(multiplicadorTamanho + 0.1, 5.0)
+    valorTamanho.Text = string.format("%.1fx", multiplicadorTamanho)
+    if modificadorAtivo then aplicarModificacoes() end
+end)
+
+btnMenosTamanho.MouseButton1Click:Connect(function()
+    multiplicadorTamanho = math.max(multiplicadorTamanho - 0.1, 0.1)
+    valorTamanho.Text = string.format("%.1fx", multiplicadorTamanho)
+    if modificadorAtivo then aplicarModificacoes() end
+end)
+
+btnSalvar.MouseButton1Click:Connect(function()
+    salvarEstruturas()
+end)
+
+btnCarregar.MouseButton1Click:Connect(function()
+    carregarEstruturas()
+end)
+
+btnResetar.MouseButton1Click:Connect(function()
+    multiplicadorLargura = 1.0
+    multiplicadorTamanho = 1.0
+    valorLargura.Text = "1.0x"
+    valorTamanho.Text = "1.0x"
+    
+    if modificadorAtivo then
+        resetarTudo()
+    end
+    
+    btnResetar.Text = "✅ RESETADO!"
+    btnResetar.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+    wait(1)
+    btnResetar.Text = "🔄 RESETAR TUDO"
+    btnResetar.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+end)
+
+-- Inicialização
+print("🔧 Modificador Físico de Estruturas")
+print("✅ Sistema carregado com sucesso!")
+print("💾 Salvamento local ativado!")
+print("📂 Para GitHub: Configure GITHUB_SAVE_URL no script")
